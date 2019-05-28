@@ -9,17 +9,18 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public class ElasticSearchClient {
 
     private RestHighLevelClient restHighLevelClient;
+    private static Logger logger = LoggerFactory.getLogger(ElasticSearchClient.class.getName());
 
-    public ElasticSearchClient(String hostName, int port, String schema) throws IOException {
+    public ElasticSearchClient(String hostName, int port, String schema) {
         this.createElasticClient(hostName, port, schema);
-//        IndexRequest indexRequest = new IndexRequest("twitter","tweets").source(json, XContentType.JSON);
-//        IndexResponse indexResponse = restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
     }
 
     private void createElasticClient(String hostName, int port, String schema) {
@@ -27,11 +28,17 @@ public class ElasticSearchClient {
         this.restHighLevelClient = new RestHighLevelClient(restClientBuilder);
     }
 
-    public RestHighLevelClient getRestHighLevelClient() {
-        return restHighLevelClient;
-    }
-
     private HttpHost getHttpHost(String hostName, int port, String schema) {
         return new HttpHost(hostName, port, schema);
+    }
+
+    public void pushData(String index, String type, String content) throws IOException {
+        IndexRequest indexRequest = this.getIndexRequest(index, type, content);
+        IndexResponse indexResponse = restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
+        logger.info(indexResponse.getId() + " has been pushed to elastic");
+    }
+
+    private IndexRequest getIndexRequest(String index, String type, String content) {
+        return new IndexRequest(index, type).source(content, XContentType.JSON);
     }
 }
